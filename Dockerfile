@@ -2,11 +2,34 @@ FROM python:3.10-slim
 
 WORKDIR /app
 
-# Устанавливаем зависимости для Playwright
+# Устанавливаем системные зависимости для Playwright (обновленные для Debian Trixie)
 RUN apt-get update && apt-get install -y \
     wget \
-    curl \
     gnupg \
+    curl \
+    unzip \
+    fonts-unifont \
+    fonts-ubuntu \
+    fonts-liberation \
+    libgdk-pixbuf-2.0-0 \
+    libgtk-3-0 \
+    libnotify4 \
+    libnss3 \
+    libxss1 \
+    libxtst6 \
+    xdg-utils \
+    libatspi2.0-0 \
+    libdrm2 \
+    libgbm1 \
+    libasound2 \
+    libx264-dev \
+    libenchant-2-2 \
+    libicu72 \
+    libjpeg62-turbo \
+    libvpx7 \
+    libwebp7 \
+    libopus0 \
+    libharfbuzz-icu0 \
     --no-install-recommends \
     && rm -rf /var/lib/apt/lists/*
 
@@ -14,9 +37,9 @@ RUN apt-get update && apt-get install -y \
 COPY requirements.txt .
 RUN pip install --no-cache-dir -r requirements.txt
 
-# Устанавливаем браузеры через Playwright
+# Устанавливаем Playwright и браузер
 RUN playwright install chromium
-RUN playwright install-deps
+# Пропускаем install-deps, так как уже установили вручную
 
 # Копируем код
 COPY . .
