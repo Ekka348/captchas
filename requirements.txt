@@ -2,15 +2,15 @@
 python-telegram-bot==20.7
 selenium==4.15.2
 undetected-chromedriver==3.5.4
-requests==2.31.0
-Pillow==10.2.0
+requests==2.32.4
+Pillow==10.3.0
 numpy==1.24.4
 opencv-python==4.9.0.80
-aiohttp==3.9.1
+aiohttp==3.12.14
 python-dotenv==1.0.0
 Flask==3.0.0
-gunicorn==21.2.0
-aiohttp==3.9.1
+gunicorn==22.0.0
+aiohttp==3.12.14
 playwright==1.40.0
 
 # Для работы с изображениями
