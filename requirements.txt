@@ -1,0 +1,16 @@
+# Основные зависимости
+pyautogui==0.9.54
+Pillow==10.2.0
+pytesseract==0.3.10
+opencv-python-headless==4.9.0.80
+numpy==1.24.4
+
+# Telegram бот
+python-telegram-bot==20.7
+python-dotenv==1.0.0
+
+# Для обработки изображений
+opencv-python==4.9.0.80
+
+# Для Railway (опционально)
+gunicorn==21.2.0
