@@ -5,9 +5,12 @@
     "dockerfilePath": "Dockerfile"
   },
   "deploy": {
-    "startCommand": "python telegram_bot.py",
+    "startCommand": "python3 telegram_bot.py",
     "restartPolicyType": "ALWAYS",
     "healthcheckPath": "/health",
     "healthcheckTimeout": 30
+  },
+  "variables": {
+    "PYTHON_VERSION": "3.10"
   }
 }
