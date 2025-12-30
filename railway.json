@@ -4,8 +4,7 @@
     "builder": "NIXPACKS"
   },
   "deploy": {
-    "startCommand": "python bot.py",
-    "healthcheckPath": "/health",
-    "healthcheckTimeout": 30
+    "startCommand": "python telegram_bot.py",
+    "restartPolicyType": "ALWAYS"
   }
 }
