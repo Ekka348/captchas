@@ -1,0 +1,17 @@
+# Основные зависимости
+Pillow==10.1.0
+pyautogui==0.9.54
+pytesseract==0.3.10
+opencv-python-headless==4.8.1.78
+numpy==1.24.3
+
+# Для тестирования и разработки
+pytest==7.4.3
+black==23.11.0
+flake8==6.1.0
+
+# Системные требования:
+# Установите Tesseract OCR отдельно:
+# Windows: https://github.com/UB-Mannheim/tesseract/wiki
+# Ubuntu/Debian: sudo apt install tesseract-ocr
+# macOS: brew install tesseract
