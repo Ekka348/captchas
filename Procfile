@@ -1,2 +1,2 @@
-web: python start.py
+web: gunicorn health:app --bind 0.0.0.0:$PORT
 worker: python telegram_bot.py
