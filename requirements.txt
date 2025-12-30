@@ -1,1 +1,27 @@
+# Основные зависимости
+python-telegram-bot==20.7
+selenium==4.15.2
+undetected-chromedriver==3.5.4
+requests==2.31.0
+Pillow==10.2.0
+numpy==1.24.4
 
+# Для распознавания капч
+opencv-python==4.9.0.80
+pytesseract==0.3.10
+
+# Для работы с изображениями
+pyautogui==0.9.54
+pygetwindow==0.0.9
+pyscreeze==0.1.30
+
+# База данных и логирование
+sqlite3
+python-dotenv==1.0.0
+
+# Веб-сервер (опционально)
+Flask==3.0.0
+
+# Для Railway
+gunicorn==21.2.0
+psycopg2-binary==2.9.9
