@@ -1,0 +1,44 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+env/
+venv/
+.venv/
+ENV/
+env.bak/
+venv.bak/
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# System
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# Project
+data/
+logs/
+*.log
+*.png
+*.jpg
+*.json
+state.json
+bot_state.json
+activity.log
+
+# Configurations
+.env
+config.local.py
+secrets.ini
+
+# Virtual environment
+venv*/
+env*/
