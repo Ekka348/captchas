@@ -1,29 +1,20 @@
 #!/usr/bin/env python3
 """
-🤖 Telegram бот с встроенным healthcheck для Railway
+🤖 Telegram бот для УПРАВЛЕНИЯ Captcha Worker
+НЕ решает капчи, только управление!
 """
 
 import os
 import json
 import logging
-import asyncio
-from datetime import datetime
-from typing import Dict, Optional
 from http.server import HTTPServer, BaseHTTPRequestHandler
 from threading import Thread
 
 from telegram import Update, InlineKeyboardButton, InlineKeyboardMarkup
-from telegram.ext import (
-    Application,
-    CommandHandler,
-    CallbackQueryHandler,
-    ContextTypes,
-    MessageHandler,
-    filters
-)
+from telegram.ext import Application, CommandHandler, CallbackQueryHandler, ContextTypes
 
 # ============================================
-# НАСТРОЙКИ
+# КОНФИГУРАЦИЯ
 # ============================================
 
 TELEGRAM_TOKEN = os.getenv("TELEGRAM_TOKEN", "")
@@ -35,8 +26,6 @@ try:
 except:
     ADMIN_IDS = []
 
-RUCAPTCHA_API_KEY = os.getenv("RUCAPTCHA_API_KEY", "")
-
 # ============================================
 # ЛОГИРОВАНИЕ
 # ============================================
@@ -45,15 +34,13 @@ logging.basicConfig(
     level=logging.INFO,
     format='%(asctime)s - %(name)s - %(levelname)s - %(message)s'
 )
-logger = logging.getLogger('TelegramBot')
+logger = logging.getLogger('TelegramBotManager')
 
 # ============================================
-# HEALTHCHECK СЕРВЕР
+# HEALTHCHECK СЕРВЕР (для Railway)
 # ============================================
 
-class HealthCheckHandler(BaseHTTPRequestHandler):
-    """Обработчик healthcheck запросов"""
-    
+class HealthHandler(BaseHTTPRequestHandler):
     def do_GET(self):
         if self.path == '/health':
             self.send_response(200)
@@ -62,113 +49,115 @@ class HealthCheckHandler(BaseHTTPRequestHandler):
             
             response = {
                 'status': 'healthy',
-                'service': 'Captcha Earning Bot',
-                'bot_status': 'running',
-                'timestamp': datetime.now().isoformat(),
-                'telegram': 'connected' if TELEGRAM_TOKEN else 'no_token',
-                'rucaptcha': 'configured' if RUCAPTCHA_API_KEY else 'no_key'
+                'service': 'Telegram Bot Manager',
+                'telegram': 'connected' if TELEGRAM_TOKEN else 'disconnected',
+                'role': 'management_only',
+                'warning': 'Это бот управления, НЕ решает капчи!'
             }
             
-            self.wfile.write(json.dumps(response).encode('utf-8'))
+            self.wfile.write(json.dumps(response).encode())
         else:
             self.send_response(404)
             self.end_headers()
     
     def log_message(self, format, *args):
-        # Отключаем логирование HTTP запросов
         pass
 
-def start_health_server(port: int = 8080):
-    """Запуск HTTP сервера для healthcheck"""
+def start_health_server(port=8080):
+    """Запуск HTTP сервера для Railway"""
     try:
-        server = HTTPServer(('0.0.0.0', port), HealthCheckHandler)
-        logger.info(f"🌐 Healthcheck сервер запущен на порту {port}")
+        server = HTTPServer(('0.0.0.0', port), HealthHandler)
+        logger.info(f"✅ Healthcheck сервер запущен на порту {port}")
         server.serve_forever()
     except Exception as e:
-        logger.error(f"❌ Ошибка healthcheck сервера: {e}")
+        logger.error(f"❌ Ошибка сервера: {e}")
 
 # ============================================
-# TELEGRAM КОМАНДЫ
+# TELEGRAM КОМАНДЫ УПРАВЛЕНИЯ
 # ============================================
 
 async def start_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    """Команда /start"""
-    user = update.effective_user
-    
-    # Проверка админа (если указаны ADMIN_IDS)
-    if ADMIN_IDS and user.id not in ADMIN_IDS:
-        await update.message.reply_text("⛔ Доступ запрещен")
-        return
-    
+    """Главное меню управления"""
     keyboard = [
-        [InlineKeyboardButton("📊 Статус", callback_data='status'),
-         InlineKeyboardButton("🩺 Health", callback_data='health')],
-        [InlineKeyboardButton("💰 Баланс", callback_data='balance'),
-         InlineKeyboardButton("⚙️ Настройки", callback_data='settings')],
+        [InlineKeyboardButton("📊 Статус воркера", callback_data='worker_status')],
+        [InlineKeyboardButton("💰 Баланс Rucaptcha", callback_data='check_balance')],
+        [InlineKeyboardButton("⚙️ Настройки", callback_data='settings')],
         [InlineKeyboardButton("❓ Помощь", callback_data='help')]
     ]
     
     reply_markup = InlineKeyboardMarkup(keyboard)
     
     await update.message.reply_text(
-        f"🤖 *Добро пожаловать, {user.first_name}!*\n\n"
-        "*Captcha Earning Bot* запущен и готов к работе.\n\n"
-        "Используйте кнопки ниже для управления:",
+        "🎮 *ЦЕНТР УПРАВЛЕНИЯ Captcha Earning Bot*\n\n"
+        "*Этот бот:*\n"
+        "• Управляет Captcha Worker\n"
+        "• Мониторит статус\n"
+        "• Проверяет баланс\n"
+        "• НЕ решает капчи!\n\n"
+        "*Captcha Worker:*\n"
+        "• Решает капчи на rucaptcha\n"
+        "• Работает отдельно\n"
+        "• Зарабатывает деньги\n\n"
+        "Используйте кнопки для управления:",
         parse_mode='Markdown',
         reply_markup=reply_markup
     )
 
-async def health_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    """Команда /health - проверка состояния системы"""
-    health_status = await get_health_status()
-    
-    status_text = (
-        f"🩺 *HEALTH CHECK*\n\n"
-        f"• *Бот:* {health_status['bot']}\n"
-        f"• *Telegram:* {health_status['telegram']}\n"
-        f"• *Rucaptcha:* {health_status['rucaptcha']}\n"
-        f"• *Время:* {health_status['time']}\n"
-        f"• *Статус:* {health_status['status']}\n\n"
-        f"_Проверка Railway: /health endpoint активен_"
-    )
-    
-    await update.message.reply_text(status_text, parse_mode='Markdown')
-
 async def status_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    """Команда /status - статус работы"""
-    status_text = (
+    """Статус системы"""
+    await update.message.reply_text(
         "📊 *СТАТУС СИСТЕМЫ*\n\n"
-        "• *Бот:* Активен ✅\n"
-        "• *Хостинг:* Railway 🚂\n"
-        "• *Режим:* Автономный\n"
-        "• *Время работы:* С момента запуска\n\n"
-        "*Доступные функции:*\n"
-        "✓ Healthcheck endpoint\n"
-        "✓ Управление через Telegram\n"
-        "✓ Мониторинг состояния\n\n"
-        "_Используйте /health для детальной проверки_"
+        "*Telegram Bot Manager:*\n"
+        "• Статус: ✅ Активен\n"
+        "• Роль: Управление\n"
+        "• Хостинг: Railway\n\n"
+        "*Captcha Worker:*\n"
+        "• Статус: ⚠️ Не запущен\n"
+        "• Расположение: Локальная машина\n"
+        "• Заработок: Не активен\n\n"
+        "_Для запуска воркера используйте локальный скрипт_",
+        parse_mode='Markdown'
     )
-    
-    await update.message.reply_text(status_text, parse_mode='Markdown')
 
-async def balance_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    """Команда /balance - проверка баланса rucaptcha"""
-    if not RUCAPTCHA_API_KEY:
+async def check_balance_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    """Проверка баланса Rucaptcha"""
+    # Запрос API ключа у пользователя
+    await update.message.reply_text(
+        "💰 *ПРОВЕРКА БАЛАНСА RUCAPTCHA*\n\n"
+        "Для проверки баланса отправьте ваш API ключ Rucaptcha:\n\n"
+        "Пример команды:\n"
+        "`/balance 99461b14be32f596e034e2459b05e645`\n\n"
+        "*Внимание:* Не делитесь ключом публично!",
+        parse_mode='Markdown'
+    )
+
+async def balance_with_key_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    """Проверка баланса с API ключом"""
+    if not context.args:
         await update.message.reply_text(
-            "❌ *API ключ rucaptcha не настроен*\n\n"
-            "Добавьте RUCAPTCHA_API_KEY в переменные Railway",
+            "❌ Укажите API ключ!\n\n"
+            "Пример: `/balance ваш_api_ключ`",
             parse_mode='Markdown'
         )
         return
     
+    api_key = context.args[0].strip()
+    
     try:
         import requests
         
-        # Запрос баланса через API rucaptcha
+        # Скрываем часть ключа в логах
+        masked_key = f"{api_key[:8]}...{api_key[-4:]}" if len(api_key) > 12 else "***"
+        
+        await update.message.reply_text(
+            f"🔄 Проверяю баланс для ключа: `{masked_key}`...",
+            parse_mode='Markdown'
+        )
+        
         response = requests.get(
             "https://rucaptcha.com/res.php",
             params={
-                'key': RUCAPTCHA_API_KEY,
+                'key': api_key,
                 'action': 'getbalance',
                 'json': 1
             },
@@ -179,170 +168,149 @@ async def balance_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
         
         if data.get('status') == 1:
             balance = float(data['request'])
+            status = "🟢 Активен" if balance > 0 else "🟡 Нет средств"
+            
             await update.message.reply_text(
                 f"💰 *БАЛАНС RUCAPTCHA*\n\n"
-                f"• *Сумма:* ${balance:.2f}\n"
-                f"• *Минимум для вывода:* $0.30\n"
-                f"• *Статус:* Активен ✅\n\n"
-                f"_Баланс обновлен_",
+                f"• *Ключ:* `{masked_key}`\n"
+                f"• *Баланс:* ${balance:.4f}\n"
+                f"• *Статус:* {status}\n"
+                f"• *Минимум для вывода:* $0.30\n\n"
+                f"_Баланс успешно проверен_",
                 parse_mode='Markdown'
             )
         else:
+            error_msg = data.get('request', 'Неизвестная ошибка')
             await update.message.reply_text(
-                f"⚠️ *Ошибка проверки баланса*\n\n"
-                f"• *Ответ API:* {data.get('request', 'Unknown')}\n"
-                f"• *Проверьте:* API ключ\n"
-                f"• *Действие:* Перезапустите бота",
+                f"❌ *ОШИБКА ПРОВЕРКИ*\n\n"
+                f"• *Ключ:* `{masked_key}`\n"
+                f"• *Ошибка:* {error_msg}\n"
+                f"• *Возможные причины:*\n"
+                f"  - Неверный API ключ\n"
+                f"  - Ключ заблокирован\n"
+                f"  - Проблемы с API\n\n"
+                f"_Проверьте ключ и попробуйте снова_",
                 parse_mode='Markdown'
             )
             
     except Exception as e:
         await update.message.reply_text(
-            f"❌ *Ошибка соединения*\n\n"
+            f"❌ *ОШИБКА СОЕДИНЕНИЯ*\n\n"
             f"• *Причина:* {str(e)}\n"
-            f"• *Проверьте:* Интернет соединение\n"
-            f"• *Действие:* Попробуйте позже",
+            f"• *Действие:* Проверьте интернет\n\n"
+            f"_Попробуйте позже_",
             parse_mode='Markdown'
         )
 
 async def help_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    """Команда /help"""
-    help_text = (
-        "❓ *ПОМОЩЬ ПО CAPTCHA EARNING BOT*\n\n"
-        "*Основные команды:*\n"
-        "• /start - Главное меню\n"
-        "• /health - Проверка состояния\n"
-        "• /status - Статус работы\n"
-        "• /balance - Баланс rucaptcha\n"
-        "• /help - Эта справка\n\n"
-        "*Для Railway:*\n"
-        "• Healthcheck: `https://ваш-проект.up.railway.app/health`\n"
-        "• Порт: 8080 (автоматически)\n\n"
-        "*Настройка:*\n"
-        "1. TELEGRAM_TOKEN - токен бота\n"
-        "2. RUCAPTCHA_API_KEY - ключ rucaptcha\n"
-        "3. ADMIN_IDS - ID администраторов\n\n"
-        "_Бот работает 24/7 на Railway_"
+    """Справка"""
+    await update.message.reply_text(
+        "❓ *ПОМОЩЬ ПО УПРАВЛЕНИЮ*\n\n"
+        "*Архитектура системы:*\n"
+        "1. 🤖 *Этот бот* (Railway) - Управление\n"
+        "2. 🎯 *Captcha Worker* (Локально) - Заработок\n\n"
+        "*Команды управления:*\n"
+        "• `/start` - Главное меню\n"
+        "• `/status` - Статус системы\n"
+        "• `/balance API_КЛЮЧ` - Проверка баланса\n"
+        "• `/help` - Эта справка\n\n"
+        "*Для заработка:*\n"
+        "1. Запустите `captcha_worker.py` локально\n"
+        "2. Используйте API ключ rucaptcha\n"
+        "3. Мониторьте через этого бота\n\n"
+        "*Важно:* Этот бот НЕ решает капчи!",
+        parse_mode='Markdown'
     )
-    
-    await update.message.reply_text(help_text, parse_mode='Markdown')
+
+async def settings_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    """Настройки"""
+    await update.message.reply_text(
+        "⚙️ *НАСТРОЙКИ СИСТЕМЫ*\n\n"
+        "*Telegram Bot Manager:*\n"
+        f"• Админов: {len(ADMIN_IDS)}\n"
+        f"• Хостинг: Railway\n"
+        f"• Healthcheck: Активен\n\n"
+        "*Для настройки заработка:*\n"
+        "1. Скачайте `captcha_worker.py`\n"
+        "2. Установите Python 3.8+\n"
+        "3. Установите зависимости:\n"
+        "   ```bash\n"
+        "   pip install requests python-telegram-bot\n"
+        "   ```\n"
+        "4. Запустите воркер:\n"
+        "   ```bash\n"
+        "   python captcha_worker.py\n"
+        "   ```\n\n"
+        "*API ключ Rucaptcha:*\n"
+        "`99461b14be32f596e034e2459b05e645`",
+        parse_mode='Markdown'
+    )
 
 # ============================================
 # CALLBACK ОБРАБОТЧИКИ
 # ============================================
 
 async def button_callback(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    """Обработчик callback кнопок"""
+    """Обработчик кнопок"""
     query = update.callback_query
     await query.answer()
     
     action = query.data
     
-    if action == 'health':
-        await health_command(query, context)
-    elif action == 'status':
+    if action == 'worker_status':
         await status_command(query, context)
-    elif action == 'balance':
-        await balance_command(query, context)
+    elif action == 'check_balance':
+        await check_balance_command(query, context)
     elif action == 'settings':
-        await query.edit_message_text(
-            "⚙️ *НАСТРОЙКИ*\n\n"
-            "Текущая конфигурация:\n"
-            f"• Telegram: {'✅' if TELEGRAM_TOKEN else '❌'}\n"
-            f"• Rucaptcha: {'✅' if RUCAPTCHA_API_KEY else '❌'}\n"
-            f"• Админы: {len(ADMIN_IDS)}\n\n"
-            "_Настройте переменные в Railway_",
-            parse_mode='Markdown'
-        )
+        await settings_command(query, context)
     elif action == 'help':
         await help_command(query, context)
-
-# ============================================
-# ВСПОМОГАТЕЛЬНЫЕ ФУНКЦИИ
-# ============================================
-
-async def get_health_status() -> Dict:
-    """Получение статуса здоровья системы"""
-    return {
-        'bot': 'running',
-        'telegram': 'connected' if TELEGRAM_TOKEN else 'no_token',
-        'rucaptcha': 'configured' if RUCAPTCHA_API_KEY else 'no_key',
-        'time': datetime.now().strftime('%H:%M:%S'),
-        'status': 'healthy' if TELEGRAM_TOKEN else 'unhealthy',
-        'railway': True,
-        'port': os.getenv('PORT', '8080')
-    }
-
-def check_environment() -> bool:
-    """Проверка окружения"""
-    errors = []
-    
-    if not TELEGRAM_TOKEN:
-        errors.append("TELEGRAM_TOKEN не установлен")
-    
-    if not RUCAPTCHA_API_KEY:
-        errors.append("RUCAPTCHA_API_KEY не установлен")
-    
-    if errors:
-        logger.error("❌ Ошибки конфигурации:")
-        for error in errors:
-            logger.error(f"  • {error}")
-        return False
-    
-    return True
 
 # ============================================
 # ОСНОВНАЯ ФУНКЦИЯ
 # ============================================
 
 def main():
-    """Основная функция запуска"""
+    """Запуск бота управления"""
     print("="*60)
-    print("🤖 CAPTCHA EARNING BOT - RAILWAY EDITION")
+    print("🤖 TELEGRAM BOT MANAGER - УПРАВЛЕНИЕ")
     print("="*60)
     
-    # Проверка окружения
-    if not check_environment():
-        print("\n❌ Исправьте ошибки и перезапустите")
+    if not TELEGRAM_TOKEN:
+        print("❌ TELEGRAM_TOKEN не установлен!")
         return
     
-    print(f"✅ Конфигурация корректна")
-    print(f"📱 Telegram: {TELEGRAM_TOKEN[:10]}...{TELEGRAM_TOKEN[-10:]}")
-    print(f"🎯 Rucaptcha: {RUCAPTCHA_API_KEY[:5]}...{RUCAPTCHA_API_KEY[-5:]}")
-    print(f"👑 Админы: {len(ADMIN_IDS)}")
+    print(f"✅ Токен: {TELEGRAM_TOKEN[:10]}...")
+    print(f"✅ Админы: {len(ADMIN_IDS)}")
     print("="*60)
     
-    # Получаем порт из переменной Railway
+    # Запуск healthcheck сервера для Railway
     port = int(os.getenv('PORT', 8080))
-    
-    # Запускаем healthcheck сервер в отдельном потоке
     health_thread = Thread(target=start_health_server, args=(port,), daemon=True)
     health_thread.start()
     
-    print(f"🌐 Healthcheck сервер запущен на порту {port}")
-    print(f"🔗 Endpoint: http://0.0.0.0:{port}/health")
+    print(f"✅ Healthcheck: http://0.0.0.0:{port}/health")
     print("="*60)
     
     # Создаем Telegram приложение
-    application = Application.builder().token(TELEGRAM_TOKEN).build()
+    app = Application.builder().token(TELEGRAM_TOKEN).build()
     
     # Регистрируем команды
-    application.add_handler(CommandHandler("start", start_command))
-    application.add_handler(CommandHandler("health", health_command))
-    application.add_handler(CommandHandler("status", status_command))
-    application.add_handler(CommandHandler("balance", balance_command))
-    application.add_handler(CommandHandler("help", help_command))
+    app.add_handler(CommandHandler("start", start_command))
+    app.add_handler(CommandHandler("status", status_command))
+    app.add_handler(CommandHandler("balance", balance_with_key_command))
+    app.add_handler(CommandHandler("help", help_command))
+    app.add_handler(CommandHandler("settings", settings_command))
     
     # Регистрируем обработчик кнопок
-    application.add_handler(CallbackQueryHandler(button_callback))
+    app.add_handler(CallbackQueryHandler(button_callback))
     
     # Запускаем бота
-    print("🤖 Запуск Telegram бота...")
+    print("🤖 Бот управления запущен!")
     print("💬 Добавьте бота в Telegram и отправьте /start")
-    print("⏳ Ожидание команд...")
     print("="*60)
     
-    application.run_polling(allowed_updates=Update.ALL_TYPES)
+    app.run_polling(allowed_updates=Update.ALL_TYPES)
 
 if __name__ == "__main__":
     main()
