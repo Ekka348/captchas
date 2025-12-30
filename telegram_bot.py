@@ -55,6 +55,19 @@ bot_status = {
     "last_worker_check": None
 }
 
+
+# Проверка что мы на сервере
+import os
+ON_SERVER = os.getenv('RAILWAY_ENVIRONMENT') is not None
+
+if ON_SERVER:
+    # Используем серверную версию воркера
+    from captcha_worker_server import CaptchaWorkerServer as CaptchaWorker
+else:
+    # Используем локальную версию
+    from captcha_worker import CaptchaWorker
+
+
 # ============================================
 # ВСПОМОГАТЕЛЬНЫЕ ФУНКЦИИ
 # ============================================
