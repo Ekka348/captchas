@@ -16,7 +16,6 @@ pygetwindow==0.0.9
 pyscreeze==0.1.30
 
 # База данных и логирование
-sqlite3
 python-dotenv==1.0.0
 
 # Веб-сервер (опционально)
