@@ -184,27 +184,24 @@ def main():
     print("=" * 50)
     
     # Создаем и запускаем приложение
-    async def run_bot():
-        application = Application.builder().token(TELEGRAM_TOKEN).build()
-        
-        # Регистрируем команды
-        application.add_handler(CommandHandler("start", start_command))
-        application.add_handler(CommandHandler("help", help_command))
-        application.add_handler(CommandHandler("status", status_command))
-        application.add_handler(CommandHandler("balance", balance_command))
-        
-        # Регистрируем обработчик кнопок
-        application.add_handler(CallbackQueryHandler(button_handler))
-        
-        # Запускаем бота
-        print("✅ Бот запущен!")
-        print("💬 Отправьте /start в Telegram")
-        print("=" * 50)
-        
-        await application.run_polling(allowed_updates=Update.ALL_TYPES)
+    application = Application.builder().token(TELEGRAM_TOKEN).build()
     
-    # Запускаем асинхронно
-    asyncio.run(run_bot())
+    # Регистрируем команды
+    application.add_handler(CommandHandler("start", start_command))
+    application.add_handler(CommandHandler("help", help_command))
+    application.add_handler(CommandHandler("status", status_command))
+    application.add_handler(CommandHandler("balance", balance_command))
+    
+    # Регистрируем обработчик кнопок
+    application.add_handler(CallbackQueryHandler(button_handler))
+    
+    # Запускаем бота
+    print("✅ Бот запущен!")
+    print("💬 Отправьте /start в Telegram")
+    print("=" * 50)
+    
+    # Запускаем polling
+    application.run_polling(allowed_updates=Update.ALL_TYPES)
 
 if __name__ == "__main__":
     main()
