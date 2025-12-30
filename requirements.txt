@@ -1,5 +1,5 @@
 # Основные зависимости
-Pillow==10.1.0
+Pillow==10.3.0
 pyautogui==0.9.54
 pytesseract==0.3.10
 opencv-python-headless==4.8.1.78
@@ -7,7 +7,7 @@ numpy==1.24.3
 
 # Для тестирования и разработки
 pytest==7.4.3
-black==23.11.0
+black==24.3.0
 flake8==6.1.0
 
 # Системные требования:
