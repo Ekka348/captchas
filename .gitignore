@@ -7,38 +7,33 @@ __pycache__/
 env/
 venv/
 .venv/
-ENV/
 env.bak/
 venv.bak/
+
+# Project files
+data/
+logs/
+*.log
+*.db
+*.sqlite3
+*.sqlite
 
 # IDE
 .vscode/
 .idea/
 *.swp
 *.swo
-*~
 
-# System
+# OS
 .DS_Store
 Thumbs.db
-desktop.ini
 
-# Project
-data/
-logs/
-*.log
-*.png
-*.jpg
-*.json
-state.json
-bot_state.json
-activity.log
-
-# Configurations
+# Secrets
+config_secret.py
 .env
-config.local.py
-secrets.ini
+*.env
+secrets.txt
 
-# Virtual environment
-venv*/
-env*/
+# Screenshots
+screenshots/
+captures/
