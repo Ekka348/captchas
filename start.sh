@@ -5,15 +5,24 @@ echo "Версия Python: $(python --version)"
 echo "Текущая директория: $(pwd)"
 
 # Создаем необходимые директории
-mkdir -p data logs screenshots
+mkdir -p data logs
 
 # Устанавливаем зависимости
 echo "📦 Установка зависимостей..."
 pip install --upgrade pip
 pip install -r requirements.txt
 
-# Устанавливаем Tesseract OCR (если нужно)
-# apt-get update && apt-get install -y tesseract-ocr tesseract-ocr-rus tesseract-ocr-eng
+# Устанавливаем Chrome для Selenium
+echo "🌐 Установка Chrome..."
+apt-get update && apt-get install -y \
+    wget \
+    gnupg \
+    curl \
+    && wget -q -O - https://dl-ssl.google.com/linux/linux_signing_key.pub | apt-key add - \
+    && echo "deb [arch=amd64] http://dl.google.com/linux/chrome/deb/ stable main" >> /etc/apt/sources.list.d/google.list \
+    && apt-get update \
+    && apt-get install -y google-chrome-stable \
+    && rm -rf /var/lib/apt/lists/*
 
 # Создаем базу данных
 echo "🗄️ Инициализация базы данных..."
