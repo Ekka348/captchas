@@ -34,7 +34,7 @@ DEFAULT_CAPTCHA_REGION: Tuple[int, int, int, int] = (718, 426, 545, 141)
 DEFAULT_INPUT_COORDS: Tuple[int, int] = (982, 597)
 
 # Координаты кнопки "следующая" (x, y)
-DEFAULT_BUTTON_COORDS: Tuple[int, int] = (1136, 622)
+DEFAULT_BUTTON_COORDS: Tuple[int, int] = (1137, 650)
 
 # ============================================
 # НАСТРОЙКИ РАСПОЗНАВАНИЯ
