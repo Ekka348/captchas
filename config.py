@@ -28,7 +28,7 @@ SETTINGS_FILE = os.path.join(DATA_DIR, "settings.json")
 # ============================================
 
 # Область капчи (x, y, width, height)
-DEFAULT_CAPTCHA_REGION: Tuple[int, int, int, int] = (688, 451, 596, 89)
+DEFAULT_CAPTCHA_REGION: Tuple[int, int, int, int] = (718, 426, 545, 141)
 
 # Координаты поля ввода (x, y)
 DEFAULT_INPUT_COORDS: Tuple[int, int] = (983, 560)
