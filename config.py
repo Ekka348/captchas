@@ -31,7 +31,7 @@ SETTINGS_FILE = os.path.join(DATA_DIR, "settings.json")
 DEFAULT_CAPTCHA_REGION: Tuple[int, int, int, int] = (718, 426, 545, 141)
 
 # Координаты поля ввода (x, y)
-DEFAULT_INPUT_COORDS: Tuple[int, int] = (983, 560)
+DEFAULT_INPUT_COORDS: Tuple[int, int] = (982, 597)
 
 # Координаты кнопки "следующая" (x, y)
 DEFAULT_BUTTON_COORDS: Tuple[int, int] = (1136, 622)
